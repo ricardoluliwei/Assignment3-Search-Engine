@@ -33,23 +33,38 @@ def construct_index(directoryPath: str):
         
     for path in file_paths:
         count += 1
+        if (count < 49000):
+            continue
+            
+        if (path[0] == 49112):
+            print(path[1])
+            
         if (count % 10000 == 0):
             with open(f"index/index_{count/limit}.txt", "w", encoding="utf-8") \
                 as file:
                 json.dump(index, file)
             index = defaultdict(lambda: defaultdict(lambda: int()))
+            print(f"dumped file index/index_{count/limit}.txt")
             
         tokens = [PorterStemmer().stem(token) for token in tokenize_a_file(
             path[1]) if len(token) > 1]
 
         for token in tokens:
             index[token][path[0]] += 1
+        
         print(f"DocID: {path[0]}")
 
     with open(f"index/index_{count / limit + 1}.txt", "w", encoding="utf-8") as file:
         json.dump(index, file)
         
-    print(f"Total words: {len(index)}")
+# def merge_file(dirPath: str):
+#     if not Path(dirPath).exists():
+#         return
+#
+#     file_list = Path(dirPath).iterdir()
+#     os.rename(file_list[0], "index.json")
+#     for file in file_list[1:]:
+    
 
 def tokenize_a_file(path: str):
     with open(path, "r", encoding="utf-8") as file:
@@ -57,6 +72,8 @@ def tokenize_a_file(path: str):
         content = data["content"]
         soup = BeautifulSoup(content, features="html.parser")
         text = soup.get_text()
+        if len(text) == 0:
+            return list()
         tokens = word_tokenize(text)
     return tokens
 
