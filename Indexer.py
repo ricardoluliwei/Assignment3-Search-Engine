@@ -20,19 +20,33 @@ from nltk import pos_tag
 from collections import defaultdict
 
 
+
 def construct_index(directoryPath: str):
     #posting: docID: frequency,
     index = defaultdict(lambda: defaultdict(lambda: int()))
     file_paths = getAllFilePaths(directoryPath)
+    limit = 10000
+    count = 0
+    
+    if not Path("index").exists():
+        Path("index").mkdir()
+        
     for path in file_paths:
+        count += 1
+        if (count % 10000 == 0):
+            with open(f"index/index_{count/limit}.txt", "w", encoding="utf-8") \
+                as file:
+                json.dump(index, file)
+            index = defaultdict(lambda: defaultdict(lambda: int()))
+            
         tokens = [PorterStemmer().stem(token) for token in tokenize_a_file(
             path[1]) if len(token) > 1]
 
         for token in tokens:
             index[token][path[0]] += 1
         print(f"DocID: {path[0]}")
-            
-    with open("index.txt", "w", encoding="utf-8") as file:
+
+    with open(f"index/index_{count / limit + 1}.txt", "w", encoding="utf-8") as file:
         json.dump(index, file)
         
     print(f"Total words: {len(index)}")
