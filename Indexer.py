@@ -21,7 +21,7 @@ from collections import defaultdict
 
 
 def construct_index(directoryPath: str):
-    #posting: frequency, docIDs: set,
+    #posting: docID: frequency,
     index = defaultdict(lambda: defaultdict(lambda: int()))
     file_paths = getAllFilePaths(directoryPath)
     for path in file_paths:
@@ -30,11 +30,12 @@ def construct_index(directoryPath: str):
 
         for token in tokens:
             index[token][path[0]] += 1
+        print(f"DocID: {path[0]}")
             
     with open("index.txt", "w", encoding="utf-8") as file:
         json.dump(index, file)
         
-
+    print(f"Total words: {len(index)}")
 
 def tokenize_a_file(path: str):
     with open(path, "r", encoding="utf-8") as file:
@@ -65,7 +66,8 @@ def getAllFilePaths(directoryPath: str) -> list:
                 fullFilePath = directory / files.name
                 listFilePaths.append([int(iDocID), str(fullFilePath)])
                 iDocID += 1
-
+    
+    print(iDocID)
     return listFilePaths
 
 
