@@ -78,10 +78,13 @@ def tokenize_a_file(path: str):
     return tokens
 
 
+def is_valid_token(token: str):
+    pass
 
 # Gets all filepaths
 def getAllFilePaths(directoryPath: str) -> list:
     listFilePaths = list()
+    hashTableIDToUrl = dict()
 
     # create list of all subdirectories that we need to process
     pathParent = Path(directoryPath)
@@ -96,9 +99,13 @@ def getAllFilePaths(directoryPath: str) -> list:
             if files.is_file():
                 fullFilePath = directory / files.name
                 listFilePaths.append([int(iDocID), str(fullFilePath)])
+                hashTableIDToUrl[int(iDocID)] = str(fullFilePath)
                 iDocID += 1
+
+    # Writes "hashtable" file that maps the docIDs to filepaths of those documents.
+    with open(os.path.join("index", "hashtable.txt"), "w+") as hash:
+        hash.write(json.dumps(hashTableIDToUrl))
     
-    print(iDocID)
     return listFilePaths
 
 
