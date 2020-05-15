@@ -72,14 +72,9 @@ def tokenize_a_file(path: str):
         content = data["content"]
         soup = BeautifulSoup(content, features="html.parser")
         text = soup.get_text()
-        if len(text) == 0:
-            return list()
-        tokens = word_tokenize(text)
+        tokens = re.findall(r"[a-z0-9][a-z0-9]+", text)
     return tokens
 
-
-def is_valid_token(token: str):
-    pass
 
 # Gets all filepaths
 def getAllFilePaths(directoryPath: str) -> list:
