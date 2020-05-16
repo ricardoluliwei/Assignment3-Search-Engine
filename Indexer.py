@@ -22,6 +22,42 @@ from collections import defaultdict
 
 
 
+class Indexer:
+    def __init__(self, dir_path: str, config_path: str):
+        self.dir_path = dir_path
+        self.config_path = config_path
+        
+    
+    def construct_index(self):
+        pass
+    
+    '''
+    Return a dictionary, key is docid, value is the absolute path of the
+    input file
+    Also construct a json file docHashTable.json, map docid to [absolute
+    path, url, status of index(True or false, finished index or not)]
+    Store docHashTable.json into config_path
+    '''
+    def open_source_dir(self, src_dir: str) -> dict:
+        pass
+    
+    '''
+    Read in certain number of source json file, construct a inverted index
+    dictionary, key is the term, value is the posting.
+    Also return a list of docid that has been read in
+    '''
+    def read_batch(self, limit: int, src_files: dict) -> [dict, list]:
+        pass
+    
+    '''
+    Write the in-memory inverted index into disk, and mark the docid as
+    complete
+    '''
+    def write_batch(self, index: dict, docs: list):
+        pass
+    
+    
+
 def construct_index(directoryPath: str):
     #posting: docID: frequency,
     index = defaultdict(lambda: defaultdict(lambda: int()))

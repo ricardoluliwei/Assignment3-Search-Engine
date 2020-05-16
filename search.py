@@ -38,7 +38,7 @@ class Director:
 "https://www.informatics.uci.edu/explore/facts-figures/",
 "https://www.informatics.uci.edu/undergrad/courses/"]
 
-
+        return ["wrong"]
     
 
 if __name__ == '__main__':
