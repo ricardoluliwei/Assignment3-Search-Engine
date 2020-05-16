@@ -26,7 +26,6 @@ def construct_index(directoryPath: str):
     #posting: docID: frequency,
     index = defaultdict(lambda: defaultdict(lambda: int()))
     file_paths = getAllFilePaths(directoryPath)
-    limit = 10000
     count = 0
     
     if not Path("index").exists():
@@ -47,7 +46,7 @@ def construct_index(directoryPath: str):
         
         print(f"DocID: {path[0]}")
 
-    with open(f"index/index_{count / limit + 1}.txt", "w", encoding="utf-8") as file:
+    with open(f"index/index", "w", encoding="utf-8") as file:
         json.dump(index, file)
         
 # def merge_file(dirPath: str):
@@ -77,7 +76,11 @@ def getAllFilePaths(directoryPath: str) -> list:
             if files.is_file():
                 fullFilePath = directory / files.name
                 listFilePaths.append([int(iDocID), str(fullFilePath)])
-                hashTableIDToUrl[int(iDocID)] = str(fullFilePath)
+                with open(files, "r", encoding="utf-8") as file:
+                    data = json.load(file)
+                    url = data["url"]
+                    print(url)
+                hashTableIDToUrl[int(iDocID)] = url
                 iDocID += 1
 
     # Writes "hashtable" file that maps the docIDs to filepaths of those documents.
@@ -91,5 +94,5 @@ def getAllFilePaths(directoryPath: str) -> list:
 
 if __name__ == '__main__':
     path = Path(os.path.pardir) / "DEV"
-    construct_index(path)
+    getAllFilePaths(path)
     print("-----DONE!-----")
