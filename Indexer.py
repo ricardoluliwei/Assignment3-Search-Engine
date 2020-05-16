@@ -6,6 +6,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from tokenizer import compute_word_frequencies
+from tokenizer import tokenize_a_file
 import string
 import nltk
 
@@ -33,24 +34,16 @@ def construct_index(directoryPath: str):
         
     for path in file_paths:
         count += 1
-        if (count < 49000):
-            continue
-            
-        if (path[0] == 49112):
-            print(path[1])
-            
-        if (count % 10000 == 0):
-            with open(f"index/index_{count/limit}.txt", "w", encoding="utf-8") \
-                as file:
-                json.dump(index, file)
-            index = defaultdict(lambda: defaultdict(lambda: int()))
-            print(f"dumped file index/index_{count/limit}.txt")
+        index = defaultdict(lambda: list())
+        print(f"dumped file index/index.txt")
             
         tokens = [PorterStemmer().stem(token) for token in tokenize_a_file(
-            path[1]) if len(token) > 1]
-
-        for token in tokens:
-            index[token][path[0]] += 1
+            path[1])]
+        
+        frequencies = compute_word_frequencies(tokens)
+        
+        for k,v in frequencies:
+            index[k]
         
         print(f"DocID: {path[0]}")
 
@@ -64,16 +57,6 @@ def construct_index(directoryPath: str):
 #     file_list = Path(dirPath).iterdir()
 #     os.rename(file_list[0], "index.json")
 #     for file in file_list[1:]:
-    
-
-def tokenize_a_file(path: str):
-    with open(path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-        content = data["content"]
-        soup = BeautifulSoup(content, features="html.parser")
-        text = soup.get_text()
-        tokens = re.findall(r"[a-z0-9][a-z0-9]+", text)
-    return tokens
 
 
 # Gets all filepaths
