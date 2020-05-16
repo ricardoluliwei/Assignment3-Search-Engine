@@ -46,7 +46,7 @@ class Indexer:
     dictionary, key is the term, value is the posting.
     Also return a list of docid that has been read in
     '''
-    def read_batch(self, limit: int, src_files: dict) -> [dict, list]:
+    def read_batch(self, src_files: dict, start: int, end: int) -> [dict, list]:
         pass
     
     '''
