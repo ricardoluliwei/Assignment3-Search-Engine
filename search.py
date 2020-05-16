@@ -11,7 +11,7 @@ class Director:
         pass
 
     #return top 5 of urls list
-    def loopup_query(self, query: str) -> list():
+    def lookup_query(self, query: str) -> list():
         return list()
 
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         if not query:
             break
             
-        urls = director.loopup_query(query)
+        urls = director.lookup_query(query)
         for url in urls:
             print(url)
 
