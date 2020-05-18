@@ -5,7 +5,7 @@ tfidf is the relevance number
 """
 
 import re
-
+import json
 
 class Posting:
     def __init__(self, docid=-1, tfidf=-1, position: list = None):
@@ -34,6 +34,9 @@ class Posting:
     def read_posting_list(cls, posting_list: str):
         postings = re.split("\n", posting_list.strip())
         return [cls.read(p) for p in postings]
+    
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,sort_keys=True, indent=4)
     
     def __str__(self):
         return str([self.docid, self.tfidf, self.position])
@@ -64,13 +67,4 @@ if __name__ == '__main__':
         postings.append(Posting(i, 100 - i, position))
     
     with open("test.txt", "w+", encoding="utf-8") as file:
-        for posting in postings:
-            file.write(str(posting) + "\n")
-    
-    with open("test.txt", "r+", encoding="utf-8") as file:
-        postings = Posting.read_posting_list(file.read())
-        
-        # postings = sorted(postings, key=lambda x: len(x.position),
-        #                   reverse=True)
-        for posting in postings:
-            print(str(posting))
+        json.dump(postings, file)

@@ -6,20 +6,20 @@ import re
 import json
 from bs4 import BeautifulSoup
 import string
-import nltk
 
 from nltk.stem import PorterStemmer
-import math
+
+from threading import Thread
+from threading import Lock
+
 import hashlib
 
-from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet as wn
-from nltk import pos_tag
 from collections import defaultdict
 
 from tokenizer import compute_word_frequencies
 from tokenizer import tokenize
 from Posting import Posting
+
 
 class Indexer:
     '''
@@ -30,14 +30,176 @@ class Indexer:
     each file contains the posting list of that term, one posting in a line
     '''
     
-    def __init__(self, src_dir: Path, index_dir: Path, log_dir: Path):
+    lock = Lock()
+    
+    def __init__(self, src_dir: Path, index_dir: Path, log_dir: Path,
+                 batch_size: int):
         self.src_dir = src_dir
         self.index_dir = index_dir
         self.log_dir = log_dir
+        self.batch_size = batch_size
     
     def construct_index(self):
-        pass
+        self.create_dir()
+        src_paths = self.open_source_dir()
+        write_batch_count = 0
+        while write_batch_count * self.batch_size < len(src_paths):
+            status = self.get_status_json()
+            read_batch_count = status["read_batches"]
+            write_batch_count = status["write_batches"]
+            
+            print(f'Indexing documents {read_batch_count * self.batch_size} ~ \
+                    {(read_batch_count + 1) * self.batch_size}')
+            
+            if read_batch_count > write_batch_count:
+                self.write_batch(recover=True)
+            partial_index = self.read_batch(src_paths, read_batch_count *
+                                            self.batch_size, self.batch_size)
+            self.write_batch(partial_index)
+            
+            print(f'Finish Indexing documents'
+                  f' {read_batch_count * self.batch_size} ~ \
+                                {(read_batch_count + 1) * self.batch_size}')
+        
+        print("--------------done !------------------")
     
+    '''
+    Read in certain number of source json file
+    return a inverted index dictionary, key is the term, value is the posting.
+    
+    Also write partial_index into log_dir
+    '''
+    
+    def read_batch(self, src_files_paths=None, start=0, limit=0) -> dict:
+        if src_files_paths is None:
+            src_files_paths = list()
+        
+        partial_index = defaultdict(lambda: list())
+        ps = PorterStemmer()
+        
+        # try:
+        #     with open(str(self.log_dir / "content_hash.json"), "r") as file:
+        #         # key is content hash value, value is list of docid
+        #         content_hash = json.load(file)
+        #
+        # except FileNotFoundError:
+        #     content_hash = defaultdict(lambda: list())
+        
+        i = start
+        if (start + limit) < len(src_files_paths):
+            end = start + limit
+        else:
+            end = len(src_files_paths)
+        
+        for src_file_path in src_files_paths[start: end]:
+            with open(src_file_path, "r", encoding="utf_8") as file:
+                json_data = json.load(file)
+                content = json_data["content"]
+            
+            text = BeautifulSoup(content, features="html.parser").get_text()
+            
+            # do similarity test here, uncompleted
+            
+            # ------------------------
+            
+            tokens = [ps.stem(token) for token in tokenize(text)]
+            term_to_positions = defaultdict(lambda: list())
+            j = 0
+            for token in tokens:
+                term_to_positions[token].append(j)
+                j+=1
+                
+            for k, v in term_to_positions.items():
+                partial_index[k].append(Posting(i, len(v), v))
+            
+            i += 1
+        
+        with open(str(self.log_dir / "partial_index.json"), "w",
+                  encoding="utf_8") as file:
+            json.dump({partial_index}, file)
+        
+        with open(str(self.log_dir / "status.json"), "r+",
+                  encoding="utf-8") as file:
+            status = json.load(file)
+            status["read_batches"] += 1
+            status["partial_index"] = 1
+            json.dump(status, file)
+        
+        return partial_index
+    
+    '''
+    Write the in-memory inverted index into disk
+    use multi threading
+    '''
+    
+    def write_batch(self, index=None, recover=False):
+        threads = []
+        if index is None:
+            index = {}
+        
+        if recover:
+            with open(str(self.log_dir / "partial_index.json"), "r") as file:
+                index = json.load(file)
+            with open(str(self.log_dir / "status.json"), "r") as file:
+                written_terms = json.load(file)["written_terms"]
+            
+            written_terms = set(written_terms)
+            
+            for k, v in index.items():
+                if k in written_terms:
+                    continue
+                thread = Thread(target=self.write_a_term, args=(k, v))
+                thread.start()
+                threads.append(thread)
+        
+        else:
+            for k, v in index.items():
+                thread = Thread(target=self.write_a_term, args=(k, v))
+                thread.start()
+                threads.append(thread)
+        
+        for thread in threads:
+            thread.join()
+        
+        with open(str(self.log_dir / "status.json"), "r+") as file:
+            status = json.load(file)
+            status["written_terms"] = []
+            status["write_batches"] += 1
+            status["partial_index"] = 0
+            json.dump(status, file)
+        
+        os.remove(str(self.log_dir / "partial_index.json"))
+    
+    '''
+    Helper function for multithreading
+    write a term and its posting list at once
+    '''
+    
+    def write_a_term(self, term: str, postings: list):
+        first_char = term[0]
+        old_postings = []
+        try:
+            with open(str(self.index_dir / first_char / term) + ".txt", "r",
+                      encoding="utf-8") as file:
+                old_postings = Posting.read_posting_list(file.read())
+        except FileNotFoundError:
+            pass
+        
+        postings.extend(old_postings)
+        
+        with open(str(self.index_dir / first_char / term) + ".txt", "w",
+                  encoding="utf-8") as file:
+            for posting in sorted(postings, reverse=True):
+                file.write(str(posting) + "\n")
+        
+        Indexer.lock.acquire()
+        with open(str(self.log_dir / "status.json"), "r+") as file:
+            status = json.load(file)
+            status["written_term"].append(term)
+            json.dump(status, file)
+        Indexer.lock.release()
+    
+    # Environment initialization method------------------------------
     '''
     Create empty directory for index and log
     '''
@@ -68,6 +230,7 @@ class Indexer:
     
     def open_source_dir(self) -> list:
         docid_to_path = dict()
+        docid_to_url = dict()
         
         # create list of all subdirectories that we need to process
         pathParent = Path(self.src_dir)
@@ -89,64 +252,23 @@ class Indexer:
         return [docid_to_path[k] for k in sorted(docid_to_path.keys())]
     
     '''
-    Read in certain number of source json file, return a inverted index
-    dictionary, key is the term, value is the posting.
-    Also return a dict, key is docid, value is it's url
+    Create status.json if it doesn't exist
+    for recording the process of indexing
     '''
     
-    def read_batch(self, src_files_paths: list, start: int, limit: int) -> [
-        dict, dict]:
-        partial_index = defaultdict(lambda: list)
-        url_dic = defaultdict(lambda: str)
+    def get_status_json(self):
         try:
-            with open(str(self.log_dir / "content_hash.json"), "r") as file:
-                #key is content hash value, value is list of docid
-                content_hash = json.load(file)
+            with open(str(self.log_dir / "status.json"), "r") as file:
+                return json.load(file)
         
         except FileNotFoundError:
-            content_hash = defaultdict(lambda: list)
-
-        i = start
-        for src_file_path in src_files_paths[start: start + limit]:
-            with open(src_file_path, "r", encoding="utf_8") as file:
-                json_data = json.load(file)
-                url = json_data["url"]
-                content = json_data["content"]
-                
-            url_dic[i] = url
-            text = BeautifulSoup(content, features="html.parser").get_text()
-            
-            #do similarity test here
-            
-            
-            
-            tokens = tokenize(text)
-            term_to_positions = defaultdict(lambda: list)
-            j = 0
-            for token in tokens:
-                term_to_positions[token].append(j)
-            
-            for k, v in term_to_positions:
-                partial_index[k].append(Posting(i, len(v), v))
-            
-            i += 1
-            
-        return [partial_index, url_dic]
+            status = {"read_batches": 0, "write_batches": 0, "partial_index": 0,
+                      "batch_size": self.batch_size, "written_terms": []}
+            with open(str(self.log_dir / "status.json"), "w") as file:
+                json.dump(status, file)
+            return status
     
-    
-    def get_sim_hash(self, word_frequency: dict):
-    
-    '''
-    Write the in-memory inverted index into disk, and mark the docid as
-    complete
-    Also construct json files:
-    docid_url.json, map docid to it's url, indicate the document has been
-    indexed
-    docid_caculated_tfidf.json, map docid to the status of it's tfidf score
-    '''
-    
-    def write_batch(self, index: dict, docs: list):
-        pass
+    # ------------------------------Environment initialization method
     
     '''
     
@@ -161,34 +283,29 @@ class Indexer:
     
     def read_index_file(self, term: str) -> list:
         pass
-
-
-def construct_index(directoryPath: str):
-    # posting: docID: frequency,
-    index = defaultdict(lambda: defaultdict(lambda: int()))
-    file_paths = getAllFilePaths(directoryPath)
-    count = 0
     
-    if not Path("index").exists():
-        Path("index").mkdir()
+    def get_sim_hash(self, text: str):
+        pass
     
-    for path in file_paths:
-        count += 1
-        index = defaultdict(lambda: list())
-        print(f"dumped file index/index.txt")
+    def get_docid_to_url(self, docid_to_path: list) -> dict:
+        try:
+            with open(str(self.log_dir / "docid_to_url.json"), "r",
+                      encoding="utf-8") as file:
+                return json.load(file)
         
-        tokens = [PorterStemmer().stem(token) for token in tokenize_a_file(
-            path[1])]
-        
-        frequencies = compute_word_frequencies(tokens)
-        
-        for k, v in frequencies:
-            index[k]
-        
-        print(f"DocID: {path[0]}")
-    
-    with open(f"index/index", "w", encoding="utf-8") as file:
-        json.dump(index, file)
+        except FileNotFoundError:
+            i = 0
+            docid_to_url = {}
+            for p in docid_to_path:
+                with open(p, "r", encoding="utf-8") as file:
+                    url = json.load(file)["url"]
+                docid_to_url[i] = url
+                i += 1
+            with open(str(self.log_dir / "docid_to_url.json"), "w",
+                      encoding="utf-8") as file:
+                json.dump(docid_to_url, file)
+            
+            return docid_to_url
 
 
 if __name__ == '__main__':
@@ -198,7 +315,5 @@ if __name__ == '__main__':
     srcPath = path / ".." / "DEV"
     destPath = path / "Index"
     logDir = path / "log"
-    indexer = Indexer(srcPath, destPath, logDir)
-    indexer.create_dir()
-    indexer.open_source_dir()
-    print("-----DONE!-----")
+    indexer = Indexer(srcPath, destPath, logDir, 1000)
+    indexer.construct_index()
