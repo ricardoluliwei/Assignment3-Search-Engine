@@ -11,7 +11,6 @@ import string
 import nltk
 
 from nltk.stem import PorterStemmer
-from nltk.tokenize import word_tokenize
 import math
 import hashlib
 
@@ -23,9 +22,17 @@ from collections import defaultdict
 
 
 class Indexer:
-    def __init__(self, dir_path: str, config_path: str):
-        self.dir_path = dir_path
-        self.config_path = config_path
+    '''
+    src_dir is the directory of web contents json file: DEV
+    dest_dir is the index directory: Index
+    Index should contain directories 0, 1, 2, 3, ... , 9 and a, b, c, ... , z
+    In each directory, every single term is a file. (ex.  apple.txt)
+    each file contains the posting list of that term, one posting in a line
+    '''
+    def __init__(self, src_dir: str, dest_dir: str, log_dir: str):
+        self.src_dir = src_dir
+        self.dest_dir = dest_dir
+        self.log_dir = log_dir
         
     
     def construct_index(self):
@@ -34,26 +41,45 @@ class Indexer:
     '''
     Return a dictionary, key is docid, value is the absolute path of the
     input file
-    Also construct a json file docHashTable.json, map docid to [absolute
-    path, url, status of index(True or false, finished index or not)]
-    Store docHashTable.json into config_path
+    Also construct json files:
+    docid_path.json, map docid to absolutepath
+    Store docid_path.json into log_dir
     '''
     def open_source_dir(self, src_dir: str) -> dict:
         pass
     
+    
+
     '''
-    Read in certain number of source json file, construct a inverted index
+    Read in certain number of source json file, return a inverted index
     dictionary, key is the term, value is the posting.
-    Also return a list of docid that has been read in
+    Also return a dict, key is docid, value is it's url
     '''
-    def read_batch(self, src_files: dict, start: int, end: int) -> [dict, list]:
+    def read_batch(self, src_files: dict, start: int, limit: int) -> [dict,
+                                                                     dict]:
         pass
     
     '''
     Write the in-memory inverted index into disk, and mark the docid as
     complete
+    Also construct json files:
+    docid_url.json, map docid to it's url, indicate the document has been
+    indexed
+    docid_caculated_tfidf.json, map docid to the status of it's tfidf score
     '''
     def write_batch(self, index: dict, docs: list):
+        pass
+    
+    '''
+    
+    '''
+    def caculate_tfidf_score(self):
+        pass
+    
+    '''
+    
+    '''
+    def read_index_file(self, term: str) -> list:
         pass
     
     
@@ -129,6 +155,5 @@ def getAllFilePaths(directoryPath: str) -> list:
 
 
 if __name__ == '__main__':
-    path = Path(os.path.pardir) / "DEV"
-    getAllFilePaths(path)
+    
     print("-----DONE!-----")

@@ -8,57 +8,69 @@ import re
 
 
 class Posting:
-    def __init__(self, docid=-1, tfidf=-1, position=list(),
-                 str_representation=""):
+    def __init__(self, docid=-1, tfidf=-1, position: list = None):
+        if position is None:
+            position = list()
         self.docid = docid
         self.tfidf = tfidf  # use word frequency here for now
         self.position = position
-        self.str_representation = str_representation
-        self.deserialize()
+    
+    '''
+    Read string format posting
+    ex. [1, 12, [1,2,3]] will be read as posting(docid = 1, tfidf = 12,
+    position = [1,2,3])
+    '''
+    
+    @classmethod
+    def read(cls, str_representation: str):
+        data = re.findall("[0-9]+", str_representation)
+        return Posting(int(data[0]), int(data[1]), [int(p) for p in data[2:]])
+    
+    '''
+    read posting list
+    postings should be separated by line separator
+    '''
+    @classmethod
+    def read_posting_list(cls, posting_list: str):
+        postings = re.split("\n", posting_list.strip())
+        return [cls.read(p) for p in postings]
     
     def __str__(self):
-        return [self.docid, self.tfidf, self.position].__str__()
+        return str([self.docid, self.tfidf, self.position])
     
-    def deserialize(self):
-        if self.str_representation:
-            data = re.findall("[0-9]+", self.str_representation)
-            self.docid = int(data[0])
-            self.tfidf = int(data[1])
-            self.position = [int(p) for p in data[2:]]
-
     def __lt__(self, other):
         return self.tfidf < other.tfidf
-
+    
     def __le__(self, other):
         return self.tfidf <= other.tfidf
-
+    
     def __eq__(self, other):
         return self.tfidf == other.tfidf
-
+    
     def __ge__(self, other):
         return self.tfidf >= other.tfidf
-
+    
     def __gt__(self, other):
         return self.tfidf > other.tfidf
-
+    
     def __ne__(self, other):
         return self.tfidf != other.tfidf
+
 
 if __name__ == '__main__':
     postings = []
     for i in range(100):
-        postings.append(Posting(i, i, [1,2,3]))
-        
+        position = [x for x in range(i + 1)]
+        postings.append(Posting(i, 100 - i, position))
+    
     with open("test.txt", "w+", encoding="utf-8") as file:
         for posting in postings:
-            file.write(posting.__str__() + "\n")
+            file.write(str(posting) + "\n")
     
     with open("test.txt", "r+", encoding="utf-8") as file:
-        postings = []
-        for line in file:
-            postings.append(Posting(str_representation=line))
-
-        postings = sorted(postings, reverse=True)
-        for posting in postings:
-            print(posting.__str__())
+        postings = Posting.read_posting_list(file.read())
         
+        # postings = sorted(postings, key=lambda x: len(x.position),
+        #                   reverse=True)
+        for posting in postings:
+            print(str(posting))

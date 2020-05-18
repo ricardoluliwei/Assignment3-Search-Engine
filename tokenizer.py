@@ -7,12 +7,13 @@ pattern = re.compile("[\W_]+")
 
 
 def tokenize(text: str) -> list:
+    tokens = []
     try:
         tokens = re.findall(r"[a-z0-9][a-z0-9]+", text.lower())
     except Exception as err:
         print(err)
     finally:
-        return [token for token in tokens if len(token) > 1]
+        return [token for token in tokens]
 
 """given a path"""
 def tokenize_a_file(path: str):
@@ -23,6 +24,7 @@ def tokenize_a_file(path: str):
         text = soup.get_text()
         tokens = re.findall(r"[a-z0-9][a-z0-9]+", text)
     return tokens
+
 
 def compute_word_frequencies(tokens: list) -> dict:
     count = defaultdict(int)
