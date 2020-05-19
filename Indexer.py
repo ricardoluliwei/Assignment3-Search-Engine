@@ -2,6 +2,7 @@
 from multiprocessing.dummy import Pool as ThreadPool
 from pathlib import Path
 import os
+import sys
 import re
 import json
 from bs4 import BeautifulSoup
@@ -115,13 +116,9 @@ class Indexer:
             # ------------------------
             
             tokens = [ps.stem(token) for token in tokenize(text)]
-            term_to_positions = defaultdict(lambda: list())
-            j = 0
-            for token in tokens:
-                term_to_positions[token].append(j)
-                j += 1
+            word_frequency = compute_word_frequencies(tokens)
             
-            for k, v in term_to_positions.items():
+            for k, v in word_frequency.items():
                 partial_index[k].append(Posting(i, len(v), v))
             
             i += 1
@@ -383,5 +380,10 @@ if __name__ == '__main__':
     srcPath = path / ".." / "DEV"
     destPath = path / "Index"
     logDir = path / "log"
-    indexer = Indexer(srcPath, destPath, logDir, 1000)
+    try:
+        batch_size = sys.argv[1]
+    except IndexError:
+        batch_size = 1000
+    
+    indexer = Indexer(srcPath, destPath, logDir, batch_size)
     indexer.construct_index()

@@ -15,22 +15,13 @@ def tokenize(text: str) -> list:
     finally:
         return [token for token in tokens]
 
-"""given a path"""
-def tokenize_a_file(path: str):
-    with open(path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-        content = data["content"]
-        soup = BeautifulSoup(content, features="html.parser")
-        text = soup.get_text()
-        tokens = re.findall(r"[a-z0-9][a-z0-9]+", text)
-    return tokens
-
 
 def compute_word_frequencies(tokens: list) -> dict:
-    count = defaultdict(int)
+    count = defaultdict(lambda: list())
     try:
+        i = 0
         for token in tokens:
-            count[token] += 1
+            count[token].append(i)
     except:
         pass
     finally:

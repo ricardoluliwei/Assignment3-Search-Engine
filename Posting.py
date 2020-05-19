@@ -62,9 +62,4 @@ class Posting:
 
 if __name__ == '__main__':
     postings = []
-    for i in range(100):
-        position = [x for x in range(i + 1)]
-        postings.append(Posting(i, 100 - i, position))
-    
-    with open("test.txt", "w+", encoding="utf-8") as file:
-        json.dump(postings, file)
+    print(postings[1])
