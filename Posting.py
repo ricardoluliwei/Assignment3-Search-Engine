@@ -32,7 +32,7 @@ class Posting:
     '''
     @classmethod
     def read_posting_list(cls, posting_list: str):
-        postings = re.split("\n", posting_list.strip())
+        postings = re.split(";", posting_list.strip())
         return [cls.read(p) for p in postings]
     
     def toJSON(self):
