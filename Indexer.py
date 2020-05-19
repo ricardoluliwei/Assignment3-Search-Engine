@@ -71,8 +71,8 @@ class Indexer:
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
-                  f' {read_batch_count * self.batch_size} ~ \
-                                {(read_batch_count + 1) * self.batch_size}')
+                  f' {read_batch_count * self.batch_size} ~ '
+                  f'{(read_batch_count + 1) * self.batch_size}')
         
         print("--------------done !------------------")
     
@@ -395,5 +395,5 @@ if __name__ == '__main__':
     except IndexError:
         batch_size = 1000
     
-    indexer = Indexer(srcPath, destPath, logDir, batch_size)
+    indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
