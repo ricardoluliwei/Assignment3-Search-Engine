@@ -156,17 +156,27 @@ class Indexer:
                 if k in written_terms:
                     continue
                 thread = Thread(target=self.write_a_term, args=(k, v))
-                thread.start()
                 threads.append(thread)
         
         else:
             for k, v in partial_index.items():
                 thread = Thread(target=self.write_a_term, args=(k, v))
-                thread.start()
                 threads.append(thread)
+                
+        max_active_threads_num = 10
+        
+        active_threads = []
         
         for thread in threads:
-            thread.join()
+            thread.start()
+            active_threads.append(thread)
+            if len(active_threads) == max_active_threads_num:
+                for act in active_threads:
+                    act.join()
+                active_threads = []
+        
+        for act in active_threads:
+            act.join()
         
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
