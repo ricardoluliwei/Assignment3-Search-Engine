@@ -116,7 +116,7 @@ class Indexer:
             # ------------------------
             
             tokens = [ps.stem(token) for token in tokenize(text)]
-            word_frequency = compute_word_frequencies(tokens)
+            word_frequency = compute_word_frequencies(tokens) #$$$$$$$$$$$$$$$$$$$$4
             
             for k, v in word_frequency.items():
                 partial_index[k].append(Posting(i, len(v), v))
@@ -212,7 +212,7 @@ class Indexer:
             postings = sorted(postings, reverse=True)
             file.write(str(postings[0]))
             for posting in postings[1:]:
-                file.write(":" + str(posting))
+                file.write(";" + str(posting))
         
         Indexer.lock.acquire()
         with open(str(self.log_dir / "status.json"), "r") as file:
@@ -391,7 +391,7 @@ if __name__ == '__main__':
     destPath = path / "Index"
     logDir = path / "log"
     try:
-        batch_size = sys.argv[1]
+        batch_size = sys.argv[1] #how many json file read and write at once
     except IndexError:
         batch_size = 1000
     

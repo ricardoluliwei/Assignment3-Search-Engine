@@ -22,6 +22,7 @@ def compute_word_frequencies(tokens: list) -> dict:
         i = 0
         for token in tokens:
             count[token].append(i)
+            i += 1
     except:
         pass
     finally:
