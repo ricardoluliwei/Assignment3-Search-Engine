@@ -9,7 +9,7 @@ pattern = re.compile("[\W_]+")
 def tokenize(text: str) -> list:
     tokens = []
     try:
-        tokens += pattern.sub(' ', line).lower().split()
+        tokens += pattern.sub(' ', text).lower().split()
     except Exception as err:
         print(err)
     finally:

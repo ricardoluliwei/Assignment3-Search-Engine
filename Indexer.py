@@ -152,7 +152,7 @@ class Indexer:
         else:
             
             for item in partial_index:
-                self.write_a_term(item[0], item[1])
+                self.write_a_term(item[0], Posting.read_posting_list(item[1]))
   
         
         with open(str(self.log_dir / "status.json"), "r") as file:
@@ -369,7 +369,7 @@ if __name__ == '__main__':
     try:
         batch_size = sys.argv[1] #how many json file read and write at once
     except IndexError:
-        batch_size = 1000
+        batch_size = 10000
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
