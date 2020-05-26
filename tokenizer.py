@@ -9,11 +9,11 @@ pattern = re.compile("[\W_]+")
 def tokenize(text: str) -> list:
     tokens = []
     try:
-        tokens = re.findall(r"[a-z0-9][a-z0-9]+", text.lower())
+        tokens += pattern.sub(' ', line).lower().split()
     except Exception as err:
         print(err)
     finally:
-        return [token for token in tokens]
+        return tokens
 
 
 def compute_word_frequencies(tokens: list) -> dict:

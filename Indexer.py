@@ -68,6 +68,7 @@ class Indexer:
             
             partial_index = self.read_batch(src_paths, read_batch_count *
                                             self.batch_size, self.batch_size)
+            print("partial index stored")
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
@@ -89,14 +90,6 @@ class Indexer:
         
         partial_index = defaultdict(lambda: list())
         ps = PorterStemmer()
-        
-        # try:
-        #     with open(str(self.log_dir / "content_hash.json"), "r") as file:
-        #         # key is content hash value, value is list of docid
-        #         content_hash = json.load(file)
-        #
-        # except FileNotFoundError:
-        #     content_hash = defaultdict(lambda: list())
         
         i = start
         if (start + limit) < len(src_files_paths):
@@ -141,7 +134,7 @@ class Indexer:
     '''
     
     def write_batch(self, partial_index=None, recover=False):
-        threads = []
+
         if partial_index is None:
             partial_index = {}
         
@@ -152,31 +145,15 @@ class Indexer:
             
             written_terms = set(written_terms)
             
-            for k, v in partial_index.items():
-                if k in written_terms:
+            for item in partial_index:
+                if item[0] in written_terms:
                     continue
-                thread = Thread(target=self.write_a_term, args=(k, v))
-                threads.append(thread)
-        
+                self.write_a_term(item[0], item[1])
         else:
-            for k, v in partial_index.items():
-                thread = Thread(target=self.write_a_term, args=(k, v))
-                threads.append(thread)
-                
-        max_active_threads_num = 10
-        
-        active_threads = []
-        
-        for thread in threads:
-            thread.start()
-            active_threads.append(thread)
-            if len(active_threads) == max_active_threads_num:
-                for act in active_threads:
-                    act.join()
-                active_threads = []
-        
-        for act in active_threads:
-            act.join()
+            
+            for item in partial_index:
+                self.write_a_term(item[0], item[1])
+  
         
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
@@ -344,7 +321,6 @@ class Indexer:
             pass
         
         # create list of all subdirectories that we need to process
-        pathParent = Path(self.src_dir)
         directory_list = [dir for dir in self.src_dir.iterdir() if dir.is_dir()]
         
         docid = 0
