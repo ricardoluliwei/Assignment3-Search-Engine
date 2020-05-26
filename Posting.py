@@ -25,6 +25,7 @@ class Posting:
     def read(cls, str_representation: str):
         data = re.findall("[0-9]+", str_representation)
         return Posting(int(data[0]), int(data[1]), [int(p) for p in data[2:]])
+
     
     '''
     read posting list

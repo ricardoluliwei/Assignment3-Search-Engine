@@ -144,15 +144,16 @@ class Indexer:
                 written_terms = json.load(file)["written_terms"]
             
             written_terms = set(written_terms)
-            
-            for item in partial_index:
+            print("Write from partial index")
+            for item in partial_index.items():
                 if item[0] in written_terms:
                     continue
+                print(f"Writing {item[0]}")
                 self.write_a_term(item[0], item[1])
         else:
-            
-            for item in partial_index:
-                self.write_a_term(item[0], Posting.read_posting_list(item[1]))
+            for item in partial_index.items():
+                print(f"Writing {item[0]}")
+                self.write_a_term(item[0], item[1])
   
         
         with open(str(self.log_dir / "status.json"), "r") as file:
