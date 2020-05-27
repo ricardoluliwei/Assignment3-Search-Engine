@@ -38,6 +38,7 @@ class Indexer:
         self.index_dir = index_dir
         self.log_dir = log_dir
         self.batch_size = batch_size
+        
     
     def construct_index(self):
         self.create_dir()
@@ -151,7 +152,7 @@ class Indexer:
                 self.write_a_term(item[0], item[1])
         else:
             for item in partial_index.items():
-                print(f"Writing {item[0]}")
+                # print(f"Writing {item[0]}")
                 self.write_a_term(item[0], item[1])
   
         
@@ -163,7 +164,6 @@ class Indexer:
         with open(str(self.log_dir / "status.json"), "w") as file:
             json.dump(status, file)
         
-        os.remove(str(self.log_dir / "partial_index.txt"))
     
     # Functional helper function----------------------------------
     '''
@@ -371,7 +371,7 @@ if __name__ == '__main__':
     try:
         batch_size = sys.argv[1] #how many json file read and write at once
     except IndexError:
-        batch_size = 10000
+        batch_size = 1000
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
