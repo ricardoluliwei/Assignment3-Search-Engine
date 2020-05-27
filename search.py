@@ -2,7 +2,7 @@ from tokenizer import tokenize
 import os
 import Posting
 
-class Director:
+class Search:
     def __init__(self, indexDEV: str):
         self.indexDEV = indexDEV
     
@@ -39,12 +39,38 @@ class Director:
 "https://www.informatics.uci.edu/undergrad/courses/"]
 
         return ["wrong"]
+
+
+class Query:
+    def __init__(self, query: str):
+        self.query_list = [ps.stem(token) for token in tokenize(text)]
+        self.posting = dict()
+        self.norm = self._norm()
     
+    def get_score(self) -> dict:
+        scores = defaultdict(float)
+        length = defaultdict(float)
+        
+        for t, p in self.posting.items():
+            for post in p:
+                scores[post.docid] += self._tfidf(t) * post.tfidf
+                length[post.docid] += post.tfidf ** 2
+        
+        result = default(float)
+        for k, y in scores.items():
+            result[k] = y / math.sqrt(length[k])
+        
+        return [k for k, v in sorted(result.items(), key=lambda x: -x[1])[0:5]]
+    
+    def _find_all_posting(self):
+        for token in self.query_list:
+            token_path = index_path + "/" + token[0] + "/" + token + ".txt"
+
 
 if __name__ == '__main__':
     
     indexdev = os.path.join("index")
-    director = Director(indexdev)
+    search = Search(indexdev)
     
     while True:
         query = input("Enter the query or enter nothing to exit: ")
