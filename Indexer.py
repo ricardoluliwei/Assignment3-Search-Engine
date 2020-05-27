@@ -31,7 +31,6 @@ class Indexer:
     each file contains the posting list of that term, one posting in a line
     '''
     
-    lock = Lock()
     
     def __init__(self, src_dir: Path, index_dir: Path, log_dir: Path,
                  batch_size: int):
@@ -121,7 +120,7 @@ class Indexer:
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
             status["read_batches"] += 1
-            status["partial_index"] = 1
+            status["partial_index"] += 1
         
         with open(str(self.log_dir / "status.json"), "w") as file:
             json.dump(status, file)
@@ -143,12 +142,12 @@ class Indexer:
             with open(str(self.log_dir / "status.json"), "r") as file:
                 written_terms = json.load(file)["written_terms"]
             
-            written_terms = set(written_terms)
             print("Write from partial index")
             for item in partial_index.items():
-                if item[0] in written_terms:
+                if written_terms > 0:
+                    written_terms -= 1
                     continue
-                print(f"Writing {item[0]}")
+                # print(f"Writing {item[0]}")
                 self.write_a_term(item[0], item[1])
         else:
             for item in partial_index.items():
@@ -158,9 +157,8 @@ class Indexer:
         
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
-            status["written_terms"] = []
+            status["written_terms"] = 0
             status["write_batches"] += 1
-            status["partial_index"] = 0
         
         with open(str(self.log_dir / "status.json"), "w") as file:
             json.dump(status, file)
@@ -192,13 +190,11 @@ class Indexer:
             for posting in postings[1:]:
                 file.write(";" + str(posting))
         
-        Indexer.lock.acquire()
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
-            status["written_terms"].append(term)
+            status["written_terms"] += 1
         with open(str(self.log_dir / "status.json"), "w") as file:
             json.dump(status, file)
-        Indexer.lock.release()
     
     '''
 
@@ -225,7 +221,10 @@ class Indexer:
     '''
     
     def write_partial_index(self, partial_index: dict):
-        with open(str(self.log_dir / "partial_index.txt"), "w") as file:
+        status = self.get_status_json()
+        partial_index_num = status["partial_index"]
+        
+        with open(str(self.log_dir / f"partial_index_{partial_index_num + 1}.txt"), "w") as file:
             for term, posting_list in partial_index.items():
                 file.write(term + ":" + str(posting_list[0]))
                 for posting in posting_list[1:]:
@@ -238,8 +237,10 @@ class Indexer:
     '''
     
     def read_partial_index(self) -> dict:
+        status = self.get_status_json()
+        partial_index_num = status["partial_index"]
         try:
-            with open(str(self.log_dir / "partial_index.txt"), "r") as file:
+            with open(str(self.log_dir / f"partial_index_{partial_index_num}.txt"), "r") as file:
                 datas = file.readlines()
                 partial_index = {}
                 for data in datas:
@@ -352,7 +353,7 @@ class Indexer:
     
         except FileNotFoundError:
             status = {"read_batches": 0, "write_batches": 0, "partial_index": 0,
-                      "batch_size": self.batch_size, "written_terms": []}
+                      "batch_size": self.batch_size, "written_terms": 0}
             with open(str(self.log_dir / "status.json"), "w") as file:
                 json.dump(status, file)
             return status
