@@ -172,23 +172,24 @@ class Indexer:
         '''
     
     def write_a_term(self, term: str, postings: list):
-        first_char = term[0]
-        old_postings = []
-        try:
-            with open(str(self.index_dir / first_char / term) + ".txt", "r",
+        if len(term) < 100:
+            first_char = term[0]
+            old_postings = []
+            try:
+                with open(str(self.index_dir / first_char / term) + ".txt", "r",
+                          encoding="utf-8") as file:
+                    old_postings = Posting.read_posting_list(file.read())
+            except FileNotFoundError:
+                pass
+            
+            postings.extend(old_postings)
+            
+            with open(str(self.index_dir / first_char / term) + ".txt", "w",
                       encoding="utf-8") as file:
-                old_postings = Posting.read_posting_list(file.read())
-        except FileNotFoundError:
-            pass
-        
-        postings.extend(old_postings)
-        
-        with open(str(self.index_dir / first_char / term) + ".txt", "w",
-                  encoding="utf-8") as file:
-            postings = sorted(postings, reverse=True)
-            file.write(str(postings[0]))
-            for posting in postings[1:]:
-                file.write(";" + str(posting))
+                postings = sorted(postings, reverse=True)
+                file.write(str(postings[0]))
+                for posting in postings[1:]:
+                    file.write(";" + str(posting))
         
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
@@ -371,7 +372,7 @@ if __name__ == '__main__':
     try:
         batch_size = sys.argv[1] #how many json file read and write at once
     except IndexError:
-        batch_size = 1000
+        batch_size = 15000
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
