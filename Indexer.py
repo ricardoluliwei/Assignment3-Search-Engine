@@ -7,6 +7,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 import string
+import math
 
 from nltk.stem import PorterStemmer
 
@@ -31,14 +32,12 @@ class Indexer:
     each file contains the posting list of that term, one posting in a line
     '''
     
-    
     def __init__(self, src_dir: Path, index_dir: Path, log_dir: Path,
                  batch_size: int):
         self.src_dir = src_dir
         self.index_dir = index_dir
         self.log_dir = log_dir
         self.batch_size = batch_size
-        
     
     def construct_index(self):
         self.create_dir()
@@ -51,7 +50,6 @@ class Indexer:
             read_batch_count = status["read_batches"]
             write_batch_count = status["write_batches"]
             
-            
             if read_batch_count > write_batch_count:
                 print(
                     f'Indexing documents {write_batch_count * self.batch_size} ~ '
@@ -61,7 +59,7 @@ class Indexer:
                       f' {read_batch_count * self.batch_size} ~ '
                       f'{(read_batch_count + 1) * self.batch_size}')
                 continue
-
+            
             print(
                 f'Indexing documents {read_batch_count * self.batch_size} ~ '
                 f'{(read_batch_count + 1) * self.batch_size}')
@@ -98,7 +96,7 @@ class Indexer:
             end = start + limit
         else:
             end = len(src_files_paths)
-
+        
         tagNamesList = ['title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong',
                         'b', 'a', 'p', 'span', 'div']
         
@@ -114,7 +112,8 @@ class Indexer:
             # ------------------------
             
             tokens = [ps.stem(token) for token in tokenize(text)]
-            word_frequency = compute_word_frequencies(tokens) #$$$$$$$$$$$$$$$$$$$$4
+            word_frequency = compute_word_frequencies(
+                tokens)  # $$$$$$$$$$$$$$$$$$$$4
             
             for k, v in word_frequency.items():
                 partial_index[k].append(Posting(i, len(v)))
@@ -139,7 +138,7 @@ class Indexer:
     '''
     
     def write_batch(self, partial_index=None, recover=False):
-
+        
         if partial_index is None:
             partial_index = {}
         
@@ -159,7 +158,6 @@ class Indexer:
             for item in partial_index.items():
                 # print(f"Writing {item[0]}")
                 self.write_a_term(item[0], item[1])
-  
         
         with open(str(self.log_dir / "status.json"), "r") as file:
             status = json.load(file)
@@ -168,7 +166,6 @@ class Indexer:
         
         with open(str(self.log_dir / "status.json"), "w") as file:
             json.dump(status, file)
-        
     
     # Functional helper function----------------------------------
     '''
@@ -207,7 +204,36 @@ class Indexer:
     '''
     
     def caculate_tfidf_score(self):
-        pass
+        N = 55393
+        with open(str(self.log_dir / "caculate_tfidf_count.txt"), "r") as file:
+            count = int(file.read())
+        i = 0
+        for dir in self.index_dir.iterdir():
+            if dir.is_dir():
+                for file in dir.iterdir():
+                    if file.is_file():
+                        if i < count:
+                            i += 1
+                            continue
+                        
+                        with open(str(file), "r") as f:
+                            posting_list = Posting.read_posting_list(f.read())
+                            
+                        idf = math.log(N / len(posting_list))
+                        
+                        for posting in posting_list:
+                            posting.tfidf = (1 + math.log(posting.tfidf)) * idf
+                            
+                        with open(str(file), "w") as f:
+                            f.write(str(posting_list[0]))
+                            for posting in posting_list[1:]:
+                                f.write(";" + str(posting))
+                                
+                        with open(
+                            str(self.log_dir / "caculate_tfidf_count.txt"),
+                            "w") as f:
+                            f.write(str(i))
+                        i += 1
     
     '''
 
@@ -230,7 +256,9 @@ class Indexer:
         status = self.get_status_json()
         partial_index_num = status["partial_index"]
         
-        with open(str(self.log_dir / f"partial_index_{partial_index_num + 1}.txt"), "w") as file:
+        with open(
+            str(self.log_dir / f"partial_index_{partial_index_num + 1}.txt"),
+            "w") as file:
             for key in sorted(partial_index.keys()):
                 posting_list = partial_index[key]
                 file.write(key + ":" + str(posting_list[0]))
@@ -247,7 +275,9 @@ class Indexer:
         status = self.get_status_json()
         partial_index_num = status["partial_index"]
         try:
-            with open(str(self.log_dir / f"partial_index_{partial_index_num}.txt"), "r") as file:
+            with open(
+                str(self.log_dir / f"partial_index_{partial_index_num}.txt"),
+                "r") as file:
                 datas = file.readlines()
                 partial_index = {}
                 for data in datas:
@@ -257,7 +287,6 @@ class Indexer:
         except FileNotFoundError:
             raise FileNotFoundError
     
-    
     '''
     Read the src json files and construct docid_to_url.json and return the dict
     '''
@@ -265,7 +294,7 @@ class Indexer:
     def get_docid_to_url(self, docid_to_path=None) -> dict:
         if docid_to_path is None:
             docid_to_path = list()
-    
+        
         try:
             with open(str(self.log_dir / "docid_to_url.json"), "r",
                       encoding="utf-8") as file:
@@ -311,7 +340,7 @@ class Indexer:
         
         if not self.log_dir.exists():
             self.log_dir.mkdir()
-
+    
     '''
     Return a list of the absolute path of the input file
     Also construct json files:
@@ -347,17 +376,17 @@ class Indexer:
             json.dump(docid_to_path, file)
         
         return [docid_to_path[k] for k in sorted(docid_to_path.keys())]
-
+    
     '''
         Create status.json if it doesn't exist
         for recording the process of indexing
         '''
-
+    
     def get_status_json(self):
         try:
             with open(str(self.log_dir / "status.json"), "r") as file:
                 return json.load(file)
-    
+        
         except FileNotFoundError:
             status = {"read_batches": 0, "write_batches": 0, "partial_index": 0,
                       "batch_size": self.batch_size, "written_terms": 0}
@@ -377,7 +406,7 @@ if __name__ == '__main__':
     destPath = data_path / "Index"
     logDir = data_path / "log"
     try:
-        batch_size = sys.argv[1] #how many json file read and write at once
+        batch_size = sys.argv[1]  # how many json file read and write at once
     except IndexError:
         batch_size = 15000
     
