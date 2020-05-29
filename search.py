@@ -1,7 +1,10 @@
 from tokenizer import tokenize
 import os
-import Posting
+from Posting import Posting
 import json
+from nltk.stem import PorterStemmer
+from collections import defaultdict
+import math
 
 index_path = "/Users/mac/Desktop/INF121/proj3/Assginment3_data/Index"
 TOTAL_DOCUMENTS = 55393
@@ -9,9 +12,9 @@ TOTAL_DOCUMENTS = 55393
 
 class Query:
     def __init__(self, query: str):
-        self.query_list = [ps.stem(token) for token in tokenize(text)]
-        self.posting = dict()
-        self.norm = self._norm()
+        ps = PorterStemmer()
+        self.query_list = [ps.stem(token) for token in tokenize(query)]
+        self.posting = self._find_all_posting()
     
     def get_result(self) -> list:
         scores = defaultdict(float)
@@ -22,21 +25,25 @@ class Query:
                 scores[post.docid] += self._tfidf(t) * post.tfidf
                 length[post.docid] += post.tfidf ** 2
         
-        result = default(float)
+        result = defaultdict(float)
         for k, y in scores.items():
             result[k] = y / math.sqrt(length[k])
         
         return [k for k, v in sorted(result.items(), key=lambda x: -x[1])[0:5]]
     
-    def _find_all_posting(self):
+    def _find_all_posting(self) -> dict:
+        posting = defaultdict()
+        
         for token in self.query_list:
             token_path = index_path + "/" + token[0] + "/" + token + ".txt"
 
         with open(str(token_path), "r", encoding = "utf-8") as file:
-                self.posting[token] = Posting.read_posting_list(file.read())
+                posting[token] = Posting.read_posting_list(file.read())
+                
+        return posting
 
-    def _tfidf(self, q):
-        return (1 + math.log(self.query_list.count(q)) * math.log(TOTAL_DOCUMENTS/len(self.posting[q]))
+    def _tfidf(self, q) -> float:
+        return (1 + math.log(self.query_list.count(q))) * math.log(TOTAL_DOCUMENTS/len(self.posting[q]))
 
 
 if __name__ == "__main__":
@@ -51,11 +58,11 @@ if __name__ == "__main__":
 
         urls = []
 
-        with open("/Users/mac/Desktop/INF121/proj3/Assginment3_data/log/docid_to_url.json", "r", encoding) as file:
+        with open("/Users/mac/Desktop/INF121/proj3/Assginment3_data/log/docid_to_url.json", "r", encoding="utf-8") as file:
             docidtoURl = json.load(file)
-            
-            for docid in result:
-                urls.append(docidtoURl[docid])
+        
+        for docid in result:
+            urls.append(docidtoURl[str(docid)])
                 
         for url in urls:
             print(url)

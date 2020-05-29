@@ -135,7 +135,6 @@ class Indexer:
     
     '''
     Write the in-memory inverted index into disk
-    use multi threading
     '''
     
     def write_batch(self, partial_index=None, recover=False):
