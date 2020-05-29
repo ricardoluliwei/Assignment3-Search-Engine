@@ -7,10 +7,16 @@ from collections import defaultdict
 import math
 import time
 
+
+docid_to_url_path = "/Users/ricardo/Downloads/Assginment3_data/log" \
+                   "/docid_to_url.json"
 index_path = "/Users/ricardo/Downloads/Assginment3_data/Index"
 term_to_idf_path = "/Users/ricardo/Downloads/Assginment3_data/log/term_to_idf" \
                    ".json"
 TOTAL_DOCUMENTS = 55393
+
+with open(term_to_idf_path, "r") as file:
+    term_to_idf = json.load(file)
 
 
 class Query:
@@ -18,9 +24,7 @@ class Query:
         ps = PorterStemmer()
         self.query_list = [ps.stem(token) for token in tokenize(query)]
         self.posting = self._find_all_posting()
-        self.idf = dict()
-        with open(term_to_idf_path, "r") as file:
-            self.idf = json.load(file)
+        self.idf = term_to_idf
     
     def get_result(self) -> list:
         scores = defaultdict(lambda: float())
@@ -31,8 +35,6 @@ class Query:
             query_length += query_tfidf ** 2
             for post in p:
                 scores[post.docid] += query_tfidf * post.tfidf
-                if (post.tfidf == 0):
-                    print(t + str(post))
                 doc_length[post.docid] += post.tfidf ** 2
         
         result = defaultdict(lambda: float())
@@ -49,10 +51,13 @@ class Query:
         for token in self.query_list:
             token_path = index_path + "/" + token[0] + "/" + token + ".txt"
             
-            with open(str(token_path), "r", encoding="utf-8") as file:
-                posting_list = Posting.read_posting_list(file.read())
-                if len(posting_list) > limit:
-                    posting[token] = posting_list[:limit]
+            try:
+                with open(str(token_path), "r", encoding="utf-8") as file:
+                    posting_list = Posting.read_posting_list(file.read())
+                    if len(posting_list) > limit:
+                        posting[token] = posting_list[:limit]
+            except FileNotFoundError:
+                print(f"typo: {token}")
         
         return posting
     
@@ -72,9 +77,7 @@ if __name__ == "__main__":
         
         urls = []
         
-        with open(
-            "/Users/ricardo/Downloads/Assginment3_data/log/docid_to_url.json",
-            "r", encoding="utf-8") as file:
+        with open(docid_to_url_path, "r", encoding="utf-8") as file:
             docidtoURl = json.load(file)
         
         for docid in result:
