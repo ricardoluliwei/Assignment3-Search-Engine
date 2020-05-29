@@ -52,12 +52,13 @@ class Indexer:
             
             if read_batch_count > write_batch_count:
                 print(
-                    f'Indexing documents {write_batch_count * self.batch_size} ~ '
+                    f'Writing from partial index'
+                    f' {read_batch_count - 1 * self.batch_size} ~ '
                     f'{read_batch_count * self.batch_size}')
                 self.write_batch(recover=True)
                 print(f'Finish Indexing documents'
-                      f' {read_batch_count * self.batch_size} ~ '
-                      f'{(read_batch_count + 1) * self.batch_size}')
+                      f' {read_batch_count - 1* self.batch_size} ~ '
+                      f'{read_batch_count * self.batch_size}')
                 continue
             
             print(
@@ -70,8 +71,8 @@ class Indexer:
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
-                  f' {read_batch_count * self.batch_size} ~ '
-                  f'{(read_batch_count + 1) * self.batch_size}')
+                  f' {read_batch_count - 1 * self.batch_size} ~ '
+                  f'{read_batch_count * self.batch_size}')
         
         print("--------------done !------------------")
     
@@ -218,17 +219,19 @@ class Indexer:
                         
                         with open(str(file), "r") as f:
                             posting_list = Posting.read_posting_list(f.read())
-                            
+                        
                         idf = math.log(N / len(posting_list))
                         
                         for posting in posting_list:
                             posting.tfidf = (1 + math.log(posting.tfidf)) * idf
-                            
+                        
+                        posting_list = sorted(posting_list, reverse=True)
+                        
                         with open(str(file), "w") as f:
                             f.write(str(posting_list[0]))
                             for posting in posting_list[1:]:
                                 f.write(";" + str(posting))
-                                
+                        
                         with open(
                             str(self.log_dir / "caculate_tfidf_count.txt"),
                             "w") as f:
