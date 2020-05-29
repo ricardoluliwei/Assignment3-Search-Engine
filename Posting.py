@@ -37,7 +37,7 @@ class Posting:
         return json.dumps(self, default=lambda o: o.__dict__,sort_keys=True, indent=4)
     
     def __str__(self):
-        return str([self.docid, self.tfidf, self.position])
+        return str([self.docid, self.tfidf])
     
     def __lt__(self, other):
         return self.tfidf < other.tfidf
