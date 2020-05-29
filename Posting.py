@@ -31,7 +31,7 @@ class Posting:
     @classmethod
     def read_posting_list(cls, posting_list: str):
         postings = re.split(";", posting_list.strip())
-        return [cls.read(p) for p in postings]
+        return [cls.read(p) for p in postings if len(p) > 2]
     
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,sort_keys=True, indent=4)

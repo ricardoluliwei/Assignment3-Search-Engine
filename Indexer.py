@@ -216,8 +216,16 @@ class Indexer:
     
     def caculate_tfidf_score(self):
         N = 55393
-        with open(str(self.log_dir / "caculate_tfidf_count.txt"), "r") as file:
-            count = int(file.read())
+        term_to_idf = defaultdict(lambda: float())
+        try:
+            with open(str(self.log_dir / "caculate_tfidf_count.txt"),
+                      "r") as file:
+                count = int(file.read())
+        except FileNotFoundError:
+            with open(str(self.log_dir / "caculate_tfidf_count.txt"),
+                      "w") as file:
+                count = 0
+                file.write(str(count))
         i = 0
         for dir in self.index_dir.iterdir():
             if dir.is_dir():
@@ -231,7 +239,8 @@ class Indexer:
                             posting_list = Posting.read_posting_list(f.read())
                         
                         idf = math.log(N / len(posting_list))
-                        
+                        term = file.name.strip(".txt")
+                        term_to_idf[term] = idf
                         for posting in posting_list:
                             posting.tfidf = (1 + math.log(posting.tfidf)) * idf
                         
@@ -247,6 +256,10 @@ class Indexer:
                             "w") as f:
                             f.write(str(i))
                         i += 1
+        
+        with open(str(self.log_dir / "term_to_idf.json"), "w") as file:
+            json.dump(term_to_idf, file)
+        
     
     '''
 
