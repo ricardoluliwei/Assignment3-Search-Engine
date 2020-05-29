@@ -5,8 +5,11 @@ import json
 from nltk.stem import PorterStemmer
 from collections import defaultdict
 import math
+import time
 
-index_path = "/Users/mac/Desktop/INF121/proj3/Assginment3_data/Index"
+index_path = "/Users/ricardo/Downloads/Assginment3_data/Index"
+term_to_idf_path = "/Users/ricardo/Downloads/Assginment3_data/log/term_to_idf" \
+                   ".json"
 TOTAL_DOCUMENTS = 55393
 
 
@@ -15,7 +18,10 @@ class Query:
         ps = PorterStemmer()
         self.query_list = [ps.stem(token) for token in tokenize(query)]
         self.posting = self._find_all_posting()
-        self.idf = dict
+        self.idf = dict()
+        with open(term_to_idf_path, "r") as file:
+            self.idf = json.load(file)
+            
     
     def get_result(self) -> list:
         scores = defaultdict(lambda: float())
@@ -46,7 +52,7 @@ class Query:
         return posting
 
     def _tfidf(self, q) -> float:
-        return (1 + math.log(self.query_list.count(q))) * math.log(TOTAL_DOCUMENTS/len(self.posting[q]))
+        return (1 + math.log(self.query_list.count(q))) * self.idf[q]
 
 
 if __name__ == "__main__":
@@ -56,9 +62,9 @@ if __name__ == "__main__":
         
         if not query:
             break
-
+        start_time = time.time()
         result = Query(query).get_result()
-
+        
         urls = []
 
         with open("/Users/mac/Desktop/INF121/proj3/Assginment3_data/log/docid_to_url.json", "r", encoding="utf-8") as file:
@@ -66,7 +72,8 @@ if __name__ == "__main__":
         
         for docid in result:
             urls.append(docidtoURl[str(docid)])
-                
+        end_time = time.time()
+        print(f"Time spent: {end_time - start_time}s")
         for url in urls:
             print(url)
 

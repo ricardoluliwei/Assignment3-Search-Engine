@@ -438,3 +438,4 @@ if __name__ == '__main__':
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
+    indexer.caculate_tfidf_score()
