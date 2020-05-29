@@ -15,17 +15,18 @@ class Query:
         ps = PorterStemmer()
         self.query_list = [ps.stem(token) for token in tokenize(query)]
         self.posting = self._find_all_posting()
+        self.idf = dict
     
     def get_result(self) -> list:
-        scores = defaultdict(float)
-        length = defaultdict(float)
+        scores = defaultdict(lambda: float())
+        length = defaultdict(lambda: float())
         
         for t, p in self.posting.items():
             for post in p:
                 scores[post.docid] += self._tfidf(t) * post.tfidf
                 length[post.docid] += post.tfidf ** 2
         
-        result = defaultdict(float)
+        result = defaultdict(lambda: float())
         for k, y in scores.items():
             result[k] = y / math.sqrt(length[k])
         
@@ -33,13 +34,15 @@ class Query:
     
     def _find_all_posting(self) -> dict:
         posting = defaultdict()
-        
+        limit = 100
         for token in self.query_list:
             token_path = index_path + "/" + token[0] + "/" + token + ".txt"
 
-        with open(str(token_path), "r", encoding = "utf-8") as file:
-                posting[token] = Posting.read_posting_list(file.read())
-                
+            with open(str(token_path), "r", encoding = "utf-8") as file:
+                posting_list = Posting.read_posting_list(file.read())
+                if len(posting_list) > limit:
+                    posting[token] = posting_list[:limit]
+                    
         return posting
 
     def _tfidf(self, q) -> float:

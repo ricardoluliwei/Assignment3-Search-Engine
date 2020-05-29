@@ -53,11 +53,11 @@ class Indexer:
             if read_batch_count > write_batch_count:
                 print(
                     f'Writing from partial index'
-                    f' {read_batch_count - 1 * self.batch_size} ~ '
+                    f' {(read_batch_count - 1) * self.batch_size} ~ '
                     f'{read_batch_count * self.batch_size}')
                 self.write_batch(recover=True)
                 print(f'Finish Indexing documents'
-                      f' {read_batch_count - 1* self.batch_size} ~ '
+                      f' {(read_batch_count - 1) * self.batch_size} ~ '
                       f'{read_batch_count * self.batch_size}')
                 continue
             
@@ -71,7 +71,7 @@ class Indexer:
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
-                  f' {read_batch_count - 1 * self.batch_size} ~ '
+                  f' {(read_batch_count - 1) * self.batch_size} ~ '
                   f'{read_batch_count * self.batch_size}')
         
         print("--------------done !------------------")
@@ -98,26 +98,37 @@ class Indexer:
         else:
             end = len(src_files_paths)
         
-        tagNamesList = ['title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong',
-                        'b', 'a', 'p', 'span', 'div']
+        tag_list = {'title': 100, 'h1': 90, 'h2': 80, 'h3': 70, 'h4': \
+            60, 'h5': 50, 'h6': 40, 'strong': 30,
+                    'b': 20, 'a': 10, 'p': 1, 'span': 1, 'div': 1}
         
         for src_file_path in src_files_paths[start: end]:
             with open(src_file_path, "r", encoding="utf_8") as file:
                 json_data = json.load(file)
                 content = json_data["content"]
             
-            text = BeautifulSoup(content, features="html.parser").get_text()
+            soup = BeautifulSoup(content, features="html.parser")
+            
+            word_frequency = defaultdict(lambda: int())
+            
+            # Different tags has different importance level
+            for tag in tag_list:
+                tag_content_list = soup.find_all(tag)
+                for tag_content in tag_content_list:
+                    text = tag_content.get_text()
+                    tokens = [ps.stem(token) for token in tokenize(text)]
+                    temp_frequency = compute_word_frequencies(tokens)
+                    for item in temp_frequency.items():
+                        if len(item[0]) > 30:
+                            continue
+                        word_frequency[item[0]] += tag_list[tag] * item[1]
             
             # do similarity test here, uncompleted
             
             # ------------------------
             
-            tokens = [ps.stem(token) for token in tokenize(text)]
-            word_frequency = compute_word_frequencies(
-                tokens)  # $$$$$$$$$$$$$$$$$$$$4
-            
             for k, v in word_frequency.items():
-                partial_index[k].append(Posting(i, len(v)))
+                partial_index[k].append(Posting(i, v))
             
             i += 1
         

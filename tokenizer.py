@@ -17,11 +17,11 @@ def tokenize(text: str) -> list:
 
 
 def compute_word_frequencies(tokens: list) -> dict:
-    count = defaultdict(lambda: list())
+    count = defaultdict(lambda: int())
     try:
         i = 0
         for token in tokens:
-            count[token].append(i)
+            count[token] += 1
             i += 1
     except:
         pass
