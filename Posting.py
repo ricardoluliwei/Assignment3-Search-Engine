@@ -8,12 +8,9 @@ import re
 import json
 
 class Posting:
-    def __init__(self, docid=-1, tfidf=-1, position: list = None):
-        if position is None:
-            position = list()
+    def __init__(self, docid=-1, tfidf=-1):
         self.docid = docid
         self.tfidf = tfidf  # use word frequency here for now
-        self.position = position
     
     '''
     Read string format posting
@@ -24,7 +21,7 @@ class Posting:
     @classmethod
     def read(cls, str_representation: str):
         data = re.findall("[0-9]+", str_representation)
-        return Posting(int(data[0]), int(data[1]), [int(p) for p in data[2:]])
+        return Posting(int(data[0]), int(data[1]))
 
     
     '''

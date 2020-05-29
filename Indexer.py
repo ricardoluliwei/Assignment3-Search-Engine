@@ -79,7 +79,9 @@ class Indexer:
     
     '''
     Read in certain number of source json file
-    return a inverted index dictionary, key is the term, value is the posting.
+    construct partial index
+    return a partial inverted index dictionary, key is the term, value is the
+    posting list.
     
     Also write partial_index into log_dir
     '''
@@ -96,6 +98,9 @@ class Indexer:
             end = start + limit
         else:
             end = len(src_files_paths)
+
+        tagNamesList = ['title', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong',
+                        'b', 'a', 'p', 'span', 'div']
         
         for src_file_path in src_files_paths[start: end]:
             with open(src_file_path, "r", encoding="utf_8") as file:
@@ -112,7 +117,7 @@ class Indexer:
             word_frequency = compute_word_frequencies(tokens) #$$$$$$$$$$$$$$$$$$$$4
             
             for k, v in word_frequency.items():
-                partial_index[k].append(Posting(i, len(v), v))
+                partial_index[k].append(Posting(i, len(v)))
             
             i += 1
         
@@ -226,8 +231,9 @@ class Indexer:
         partial_index_num = status["partial_index"]
         
         with open(str(self.log_dir / f"partial_index_{partial_index_num + 1}.txt"), "w") as file:
-            for term, posting_list in partial_index.items():
-                file.write(term + ":" + str(posting_list[0]))
+            for key in sorted(partial_index.keys()):
+                posting_list = partial_index[key]
+                file.write(key + ":" + str(posting_list[0]))
                 for posting in posting_list[1:]:
                     file.write(";" + str(posting))
                 file.write("\n")
@@ -363,12 +369,13 @@ class Indexer:
 
 
 if __name__ == '__main__':
-    path = Path("../Assginment3_data")
-    if not path.exists():
-        path.mkdir()
-    srcPath = path / ".." / "DEV"
-    destPath = path / "Index"
-    logDir = path / "log"
+    download = Path("/Users/ricardo/Downloads")
+    data_path = download / "Assginment3_data"
+    if not data_path.exists():
+        data_path.mkdir()
+    srcPath = download / "DEV"
+    destPath = data_path / "Index"
+    logDir = data_path / "log"
     try:
         batch_size = sys.argv[1] #how many json file read and write at once
     except IndexError:
