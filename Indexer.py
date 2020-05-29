@@ -215,6 +215,7 @@ class Indexer:
     '''
     
     def caculate_tfidf_score(self):
+        print("Calculating tfidf score ...")
         N = 55393
         term_to_idf = defaultdict(lambda: float())
         try:
@@ -238,7 +239,7 @@ class Indexer:
                         with open(str(file), "r") as f:
                             posting_list = Posting.read_posting_list(f.read())
                         
-                        idf = math.log(N / len(posting_list))
+                        idf = math.log(float(N) / len(posting_list))
                         term = file.name.strip(".txt")
                         term_to_idf[term] = idf
                         for posting in posting_list:
@@ -260,6 +261,7 @@ class Indexer:
         with open(str(self.log_dir / "term_to_idf.json"), "w") as file:
             json.dump(term_to_idf, file)
         
+        print("Calculating tfidf score done !")
     
     '''
 
@@ -425,16 +427,22 @@ class Indexer:
 
 if __name__ == '__main__':
     download = Path("/Users/ricardo/Downloads")
+    
+    # Where the source website json file store
+    srcPath = download / "DEV"
+    
+    # Where you store the data
     data_path = download / "Assginment3_data"
     if not data_path.exists():
         data_path.mkdir()
-    srcPath = download / "DEV"
+    
     destPath = data_path / "Index"
     logDir = data_path / "log"
     try:
         batch_size = sys.argv[1]  # how many json file read and write at once
     except IndexError:
         batch_size = 15000
+        
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()

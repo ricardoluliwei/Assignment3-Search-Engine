@@ -8,25 +8,24 @@ import re
 import json
 
 class Posting:
-    def __init__(self, docid=-1, tfidf=-1):
+    def __init__(self, docid=-1, tfidf=-1.0):
         self.docid = docid
         self.tfidf = tfidf  # use word frequency here for now
     
     '''
     Read string format posting
-    ex. [1, 12, [1,2,3]] will be read as posting(docid = 1, tfidf = 12,
-    position = [1,2,3])
+    ex. [1, 12, [1,2,3]] will be read as posting(docid = 1, tfidf = 12)
     '''
     
     @classmethod
     def read(cls, str_representation: str):
-        data = re.findall("[0-9]+", str_representation)
-        return Posting(int(data[0]), int(data[1]))
+        data = re.findall("[0-9.]+", str_representation)
+        return Posting(int(data[0]), float(data[1]))
 
     
     '''
     read posting list
-    postings should be separated by line separator
+    postings should be separated by ;
     '''
     @classmethod
     def read_posting_list(cls, posting_list: str):
