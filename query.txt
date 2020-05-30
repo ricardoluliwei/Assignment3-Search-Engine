@@ -1,0 +1,32 @@
+"""
+Author:
+Liwei Lu 20294187
+Xinyi Ai  37489204
+Yiming Tang 60899836
+Jiadong Zhang 51693147
+
+"""
+
+Good Queries
+1. cristina lopes. Fast and relevant result
+2. ACM. Fast and most of the results relevant
+3. master of software engineering. Slow but relevant result.
+4. informatics uci. Fast and relevant
+5. international students. Slow and relevant
+6. graduate students. slow and relevant
+7. ics undergraduate. Slow and relevant
+8. resource: fast and relevant
+9. Alex Nicolau. fast and relevant
+10. Donald Bren Hall. Fast and relevant
+
+Bad Queries
+1. machine learning. Slow but relevant result
+2. ics.uci.edu . Slow and irrelevant result
+3. apple. Fast but irrelevant
+4. 138923423. typo error
+5. Asymptotic Analysis of Recursion. Slow and few is relevant
+6. project guide: slow and irrelevant
+7. introductory Computer Organization. slow and irrelevant
+8. Kaggle Competition. Fast but not relevant
+9. mysql. Fast and irrelevant
+10. university of California. Too slow but relevant result

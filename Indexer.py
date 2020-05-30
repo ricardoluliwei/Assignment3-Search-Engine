@@ -1,3 +1,5 @@
+
+
 from pathlib import Path
 import os
 import sys
@@ -222,7 +224,7 @@ class Indexer:
                             posting_list = Posting.read_posting_list(f.read())
                         
                         idf = math.log(float(N) / len(posting_list))
-                        term = file.name.strip(".txt")
+                        term = file.name[:-4]
                         term_to_idf[term] = idf
                         for posting in posting_list:
                             posting.tfidf = (1 + math.log(posting.tf)) * idf
