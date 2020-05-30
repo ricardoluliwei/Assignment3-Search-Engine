@@ -215,7 +215,6 @@ class Indexer:
         N = 55393
         term_to_idf = defaultdict(lambda: float())
         
-        i = 0
         for dir in self.index_dir.iterdir():
             if dir.is_dir():
                 for file in dir.iterdir():
@@ -235,12 +234,9 @@ class Indexer:
                             f.write(str(posting_list[0]))
                             for posting in posting_list[1:]:
                                 f.write(";" + str(posting))
-                        
-                        with open(
-                            str(self.log_dir / "caculate_tfidf_count.txt"),
-                            "w") as f:
-                            f.write(str(i))
-                        i += 1
+        
+        with open(str(self.log_dir / "term_to_tfidf.json"), "w") as file:
+            json.dump(term_to_idf, file)
         
         print("Calculating tfidf score done !")
     
@@ -425,4 +421,4 @@ if __name__ == '__main__':
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
-    # indexer.caculate_tfidf_score()
+    indexer.caculate_tfidf_score()
