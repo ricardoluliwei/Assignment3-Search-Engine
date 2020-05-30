@@ -11,9 +11,6 @@ import math
 
 from nltk.stem import PorterStemmer
 
-from threading import Thread
-from threading import Lock
-
 import hashlib
 
 from collections import defaultdict
@@ -41,11 +38,11 @@ class Indexer:
     
     def construct_index(self):
         self.create_dir()
-        src_paths = self.open_source_dir()
-        self.get_docid_to_url(src_paths)
+        docid_to_path = self.open_source_dir()
+        self.get_docid_to_url(docid_to_path)
         status = self.get_status_json()
         write_batch_count = status["write_batches"]
-        while write_batch_count * self.batch_size < len(src_paths):
+        while write_batch_count * self.batch_size < len(docid_to_path):
             status = self.get_status_json()
             read_batch_count = status["read_batches"]
             write_batch_count = status["write_batches"]
@@ -65,13 +62,13 @@ class Indexer:
                 f'Indexing documents {read_batch_count * self.batch_size} ~ '
                 f'{(read_batch_count + 1) * self.batch_size}')
             
-            partial_index = self.read_batch(src_paths, read_batch_count *
+            partial_index = self.read_batch(docid_to_path, read_batch_count *
                                             self.batch_size, self.batch_size)
             print("partial index stored")
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
-                  f' {read_batch_count  * self.batch_size} ~ '
+                  f' {read_batch_count * self.batch_size} ~ '
                   f'{(read_batch_count + 1) * self.batch_size}')
         
         print("--------------done !------------------")
@@ -85,25 +82,24 @@ class Indexer:
     Also write partial_index into log_dir
     '''
     
-    def read_batch(self, src_files_paths=None, start=0, limit=0) -> dict:
-        if src_files_paths is None:
-            src_files_paths = list()
+    def read_batch(self, docid_to_path=None, start=0, limit=0) -> dict:
+        if docid_to_path is None:
+            docid_to_path = list()
         
         partial_index = defaultdict(lambda: list())
         ps = PorterStemmer()
         
-        i = start
-        if (start + limit) < len(src_files_paths):
+        if (start + limit) < len(docid_to_path):
             end = start + limit
         else:
-            end = len(src_files_paths)
+            end = len(docid_to_path)
         
         tag_list = {'title': 100, 'h1': 90, 'h2': 80, 'h3': 70, 'h4': \
             60, 'h5': 50, 'h6': 40, 'strong': 30,
                     'b': 20, 'a': 10, 'p': 1, 'span': 1, 'div': 1}
         
-        for src_file_path in src_files_paths[start: end]:
-            with open(src_file_path, "r", encoding="utf_8") as file:
+        for i in range(start, end):
+            with open(docid_to_path[str(i)], "r") as file:
                 json_data = json.load(file)
                 content = json_data["content"]
             
@@ -111,20 +107,20 @@ class Indexer:
             
             word_frequency = defaultdict(lambda: int())
             
-            # # Different tags has different importance level
-            # for tag in tag_list:
-            #     tag_content_list = soup.find_all(tag)
-            #     for tag_content in tag_content_list:
-            #         text = tag_content.get_text()
-            #         tokens = [ps.stem(token) for token in tokenize(text)]
-            #         temp_frequency = compute_word_frequencies(tokens)
-            #         for item in temp_frequency.items():
-            #             if len(item[0]) > 30:
-            #                 continue
-            #             word_frequency[item[0]] += tag_list[tag] * item[1]
+            # Different tags has different importance level
+            for tag in tag_list:
+                tag_content_list = soup.find_all(tag)
+                for tag_content in tag_content_list:
+                    text = tag_content.get_text()
+                    tokens = [ps.stem(token) for token in tokenize(text)]
+                    temp_frequency = compute_word_frequencies(tokens)
+                    for item in temp_frequency.items():
+                        if len(item[0]) > 30:
+                            continue
+                        word_frequency[item[0]] += tag_list[tag] * item[1]
             
-            tokens = [ps.stem(token) for token in tokenize(soup.get_text())]
-            word_frequency = compute_word_frequencies(tokens)
+            # tokens = [ps.stem(token) for token in tokenize(soup.get_text())]
+            # word_frequency = compute_word_frequencies(tokens)
             
             # do similarity test here, uncompleted
             
@@ -132,8 +128,6 @@ class Indexer:
             
             for k, v in word_frequency.items():
                 partial_index[k].append(Posting(i, v))
-            
-            i += 1
         
         self.write_partial_index(partial_index)
         
@@ -221,7 +215,7 @@ class Indexer:
         print("Calculating tfidf score ...")
         N = 55393
         term_to_idf = defaultdict(lambda: float())
-
+        
         i = 0
         for dir in self.index_dir.iterdir():
             if dir.is_dir():
@@ -310,7 +304,7 @@ class Indexer:
     
     def get_docid_to_url(self, docid_to_path=None) -> dict:
         if docid_to_path is None:
-            docid_to_path = list()
+            docid_to_path = dict()
         
         try:
             with open(str(self.log_dir / "docid_to_url.json"), "r",
@@ -321,13 +315,12 @@ class Indexer:
             if len(docid_to_path) == 0:
                 raise FileNotFoundError
             
-            i = 0
             docid_to_url = {}
-            for p in docid_to_path:
-                with open(p, "r", encoding="utf-8") as file:
+            for k, v in docid_to_path.items():
+                with open(v, "r", encoding="utf-8") as file:
                     url = json.load(file)["url"]
-                docid_to_url[i] = url
-                i += 1
+                docid_to_url[k] = url
+            
             with open(str(self.log_dir / "docid_to_url.json"), "w",
                       encoding="utf-8") as file:
                 json.dump(docid_to_url, file)
@@ -365,12 +358,12 @@ class Indexer:
     Store docid_path.json into log_dir
     '''
     
-    def open_source_dir(self) -> list:
+    def open_source_dir(self) -> dict:
         docid_to_path = dict()
         try:
             with open(str(self.log_dir / "docid_to_path.json"), "r") as file:
                 docid_to_path = json.load(file)
-                return [docid_to_path[k] for k in sorted(docid_to_path.keys())]
+                return docid_to_path
         
         except FileNotFoundError:
             pass
@@ -392,7 +385,7 @@ class Indexer:
         with open(str(self.log_dir / "docid_to_path.json"), "w") as file:
             json.dump(docid_to_path, file)
         
-        return [docid_to_path[k] for k in sorted(docid_to_path.keys())]
+        return docid_to_path
     
     '''
         Create status.json if it doesn't exist
@@ -431,8 +424,7 @@ if __name__ == '__main__':
         batch_size = sys.argv[1]  # how many json file read and write at once
     except IndexError:
         batch_size = 15000
-        
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
-    #indexer.caculate_tfidf_score()
+    # indexer.caculate_tfidf_score()
