@@ -1,3 +1,12 @@
+"""
+Author:
+Liwei Lu 20294187
+Xinyi Ai  37489204
+Yiming Tang 60899836
+Jiadong Zhang 51693147
+
+"""
+
 from tokenizer import tokenize
 import os
 from Posting import Posting

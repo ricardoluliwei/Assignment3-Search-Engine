@@ -1,3 +1,13 @@
+"""
+Author:
+Liwei Lu 20294187
+Xinyi Ai  37489204
+Yiming Tang 60899836
+Jiadong Zhang 51693147
+
+"""
+
+
 import re
 from collections import defaultdict
 from bs4 import BeautifulSoup

@@ -1,13 +1,22 @@
 """
-Contain context of term occurrence in a document
-docid is the id of document, from 0 to n, n is the number of total documents
-tfidf is the relevance number
+Author:
+Liwei Lu 20294187
+Xinyi Ai  37489204
+Yiming Tang 60899836
+Jiadong Zhang 51693147
+
 """
+
 
 import re
 import json
 
 class Posting:
+    """
+    Contain context of term occurrence in a document
+    docid is the id of document, from 0 to n, n is the number of total documents
+    tfidf is the relevance number
+    """
     def __init__(self, docid=-1, tf=0, tfidf=0.0):
         self.docid = docid
         self.tf = tf
