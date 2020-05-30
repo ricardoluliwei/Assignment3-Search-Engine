@@ -111,17 +111,20 @@ class Indexer:
             
             word_frequency = defaultdict(lambda: int())
             
-            # Different tags has different importance level
-            for tag in tag_list:
-                tag_content_list = soup.find_all(tag)
-                for tag_content in tag_content_list:
-                    text = tag_content.get_text()
-                    tokens = [ps.stem(token) for token in tokenize(text)]
-                    temp_frequency = compute_word_frequencies(tokens)
-                    for item in temp_frequency.items():
-                        if len(item[0]) > 30:
-                            continue
-                        word_frequency[item[0]] += tag_list[tag] * item[1]
+            # # Different tags has different importance level
+            # for tag in tag_list:
+            #     tag_content_list = soup.find_all(tag)
+            #     for tag_content in tag_content_list:
+            #         text = tag_content.get_text()
+            #         tokens = [ps.stem(token) for token in tokenize(text)]
+            #         temp_frequency = compute_word_frequencies(tokens)
+            #         for item in temp_frequency.items():
+            #             if len(item[0]) > 30:
+            #                 continue
+            #             word_frequency[item[0]] += tag_list[tag] * item[1]
+            
+            tokens = [ps.stem(token) for token in tokenize(soup.get_text())]
+            word_frequency = compute_word_frequencies(tokens)
             
             # do similarity test here, uncompleted
             
