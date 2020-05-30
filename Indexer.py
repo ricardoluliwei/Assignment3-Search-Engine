@@ -430,7 +430,7 @@ if __name__ == '__main__':
     try:
         batch_size = sys.argv[1]  # how many json file read and write at once
     except IndexError:
-        batch_size = 1000
+        batch_size = 15000
         
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
