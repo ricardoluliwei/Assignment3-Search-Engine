@@ -229,7 +229,7 @@ class Indexer:
                         term = file.name.strip(".txt")
                         term_to_idf[term] = idf
                         for posting in posting_list:
-                            posting.tfidf = (1 + math.log(posting.tfidf)) * idf
+                            posting.tfidf = (1 + math.log(posting.tf)) * idf
                         
                         posting_list = sorted(posting_list, reverse=True)
                         
