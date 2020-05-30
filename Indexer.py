@@ -71,8 +71,8 @@ class Indexer:
             self.write_batch(partial_index)
             
             print(f'Finish Indexing documents'
-                  f' {(read_batch_count - 1) * self.batch_size} ~ '
-                  f'{read_batch_count * self.batch_size}')
+                  f' {read_batch_count  * self.batch_size} ~ '
+                  f'{(read_batch_count + 1) * self.batch_size}')
         
         print("--------------done !------------------")
     
@@ -218,24 +218,13 @@ class Indexer:
         print("Calculating tfidf score ...")
         N = 55393
         term_to_idf = defaultdict(lambda: float())
-        try:
-            with open(str(self.log_dir / "caculate_tfidf_count.txt"),
-                      "r") as file:
-                count = int(file.read())
-        except FileNotFoundError:
-            with open(str(self.log_dir / "caculate_tfidf_count.txt"),
-                      "w") as file:
-                count = 0
-                file.write(str(count))
+
         i = 0
         for dir in self.index_dir.iterdir():
             if dir.is_dir():
+                print(dir.name)
                 for file in dir.iterdir():
                     if file.is_file():
-                        if i < count:
-                            i += 1
-                            continue
-                        
                         with open(str(file), "r") as f:
                             posting_list = Posting.read_posting_list(f.read())
                         
@@ -257,9 +246,6 @@ class Indexer:
                             "w") as f:
                             f.write(str(i))
                         i += 1
-        
-        with open(str(self.log_dir / "term_to_idf.json"), "w") as file:
-            json.dump(term_to_idf, file)
         
         print("Calculating tfidf score done !")
     
@@ -441,9 +427,9 @@ if __name__ == '__main__':
     try:
         batch_size = sys.argv[1]  # how many json file read and write at once
     except IndexError:
-        batch_size = 15000
+        batch_size = 1000
         
     
     indexer = Indexer(srcPath, destPath, logDir, int(batch_size))
     indexer.construct_index()
-    indexer.caculate_tfidf_score()
+    #indexer.caculate_tfidf_score()

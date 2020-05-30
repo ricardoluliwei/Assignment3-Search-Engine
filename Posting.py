@@ -8,19 +8,19 @@ import re
 import json
 
 class Posting:
-    def __init__(self, docid=-1, tfidf=-1.0):
+    def __init__(self, docid=-1, tf=0, tfidf=-1.0):
         self.docid = docid
+        self.tf = tf
         self.tfidf = tfidf  # use word frequency here for now
     
     '''
     Read string format posting
-    ex. [1, 12, [1,2,3]] will be read as posting(docid = 1, tfidf = 12)
     '''
     
     @classmethod
     def read(cls, str_representation: str):
         data = re.findall("[0-9.]+", str_representation)
-        return Posting(int(data[0]), float(data[1]))
+        return Posting(int(data[0]), int(data[1]), float(data[2]))
 
     
     '''
@@ -32,11 +32,9 @@ class Posting:
         postings = re.split(";", posting_list.strip())
         return [cls.read(p) for p in postings if len(p) > 2]
     
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__,sort_keys=True, indent=4)
     
     def __str__(self):
-        return str([self.docid, self.tfidf])
+        return str([self.docid, self.tf, self.tfidf])
     
     def __lt__(self, other):
         return self.tfidf < other.tfidf
