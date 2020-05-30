@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import os
 import sys
@@ -235,7 +234,7 @@ class Indexer:
                             for posting in posting_list[1:]:
                                 f.write(";" + str(posting))
         
-        with open(str(self.log_dir / "term_to_tfidf.json"), "w") as file:
+        with open(str(self.log_dir / "term_to_idf.json"), "w") as file:
             json.dump(term_to_idf, file)
         
         print("Calculating tfidf score done !")
