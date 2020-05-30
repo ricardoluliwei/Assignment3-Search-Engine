@@ -1,5 +1,4 @@
-# from multiprocessing import Pool, Queue, Lock
-from multiprocessing.dummy import Pool as ThreadPool
+
 from pathlib import Path
 import os
 import sys
@@ -219,7 +218,6 @@ class Indexer:
         i = 0
         for dir in self.index_dir.iterdir():
             if dir.is_dir():
-                print(dir.name)
                 for file in dir.iterdir():
                     if file.is_file():
                         with open(str(file), "r") as f:

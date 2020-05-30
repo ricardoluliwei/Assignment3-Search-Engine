@@ -28,20 +28,20 @@ class Query:
     
     def get_result(self) -> list:
         scores = defaultdict(lambda: float())
-        doc_length = defaultdict(lambda: float())
-        query_length = 0
+        doc_norm = defaultdict(lambda: float())
+        query_norm = 0
         for t, p in self.posting.items():
             query_tfidf = self._tfidf(t)
-            query_length += query_tfidf ** 2
+            query_norm += query_tfidf ** 2
             for post in p:
                 scores[post.docid] += query_tfidf * post.tfidf
-                doc_length[post.docid] += post.tfidf ** 2
+                doc_norm[post.docid] += post.tfidf ** 2
         
         result = defaultdict(lambda: float())
         
-        query_length = math.sqrt(query_length)
+        query_norm = math.sqrt(query_norm)
         for k, y in scores.items():
-            result[k] = y / (math.sqrt(doc_length[k]) * query_length)
+            result[k] = y / (math.sqrt(doc_norm[k]) * query_norm)
         
         return [k for k, v in sorted(result.items(), key=lambda x: -x[1])[0:5]]
     

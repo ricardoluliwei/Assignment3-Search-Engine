@@ -8,7 +8,7 @@ import re
 import json
 
 class Posting:
-    def __init__(self, docid=-1, tf=0, tfidf=-1.0):
+    def __init__(self, docid=-1, tf=0, tfidf=0.0):
         self.docid = docid
         self.tf = tf
         self.tfidf = tfidf  # use word frequency here for now
